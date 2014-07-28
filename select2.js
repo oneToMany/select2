@@ -989,7 +989,7 @@ the specific language governing permissions and limitations under the Apache Lic
                     populate(results, container, 0);
                 }
             }, $.fn.select2.defaults, opts);
-
+			
             if (typeof(opts.id) !== "function") {
                 idKey = opts.id;
                 opts.id = function (e) { return e[idKey]; };
@@ -1683,12 +1683,20 @@ the specific language governing permissions and limitations under the Apache Lic
                 lastTerm = $.data(this.container, "select2-last-term"),
                 // sequence number used to drop out-of-order responses
                 queryNumber;
-
+            var regSemicolon = /[0-9]+;$/;
             // prevent duplicate queries against the same term
             if (initial !== true && lastTerm && equal(term, lastTerm)) return;
 
             $.data(this.container, "select2-last-term", term);
-
+            if (regSemicolon.test(term)) {
+				var dataNotSemicolon = term.substring(0,term.length-1);
+				var dataSemicolon = {
+					id : dataNotSemicolon,
+					text : dataNotSemicolon
+				};
+				this.onSelect(dataSemicolon);
+				return ;
+			}
             // if the search is currently hidden we do not alter the results
             if (initial !== true && (this.showSearchInput === false || !this.opened())) {
                 return;
@@ -3043,7 +3051,8 @@ the specific language governing permissions and limitations under the Apache Lic
                 val = this.getVal(),
                 formatted,
                 cssClass;
-
+			
+			
             formatted=this.opts.formatSelection(data, choice.find("div"), this.opts.escapeMarkup);
             if (formatted != undefined) {
                 choice.find("div").replaceWith("<div>"+formatted+"</div>");
@@ -3052,7 +3061,12 @@ the specific language governing permissions and limitations under the Apache Lic
             if (cssClass != undefined) {
                 choice.addClass(cssClass);
             }
-
+			if(enableChoice) {
+				choice.find("div").
+					on("click",this.bind(function(e) {
+					this.opts.selectedCilck(data);
+				}));
+			}
             if(enableChoice){
               choice.find(".select2-search-choice-close")
                   .on("mousedown", killEvent)
@@ -3412,6 +3426,7 @@ the specific language governing permissions and limitations under the Apache Lic
         dropdownCss: {},
         containerCssClass: "",
         dropdownCssClass: "",
+		selectedCilck: {},
         formatResult: function(result, container, query, escapeMarkup) {
             var markup=[];
             markMatch(result.text, query.term, markup, escapeMarkup);
